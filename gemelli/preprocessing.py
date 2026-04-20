@@ -21,7 +21,6 @@ from .base import _BaseConstruct
 from inspect import getfullargspec
 from gemelli._defaults import DEFAULT_MTD
 from skbio.stats.composition import clr
-from skbio.diversity._util import _vectorize_counts_and_tree
 from bp import parse_newick, to_skbio_treenode
 from scipy.sparse.linalg import svds
 # import QIIME2 if in a Q2env otherwise set type to str
@@ -627,13 +626,23 @@ def fast_unifrac(table, tree):
     TODO
 
     """
+    
+    # Lazy Loading
+    try:
+        from skbio.diversity._util import vectorize_counts_and_tree
+    except ImportError:
+        raise ImportError(
+        "Could not import vectorize_counts_and_tree from skbio.diversity._util. "
+        "This function was made public in scikit-bio >= 0.6. "
+        "Please upgrade scikit-bio: pip install 'scikit-bio>=0.6'"
+        )
 
     # original table
     bt_array = table.matrix_data.toarray()
     otu_ids = table.ids('observation')
     # expand the vectorized table
     counts_by_node, tree_index, branch_lengths \
-        = _vectorize_counts_and_tree(bt_array.T, otu_ids, tree)
+        = vectorize_counts_and_tree(bt_array.T, otu_ids, tree)
     # check branch lengths
     if sum(branch_lengths) == 0:
         raise ValueError('All tree branch lengths are zero. '
